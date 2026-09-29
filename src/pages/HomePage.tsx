@@ -111,10 +111,10 @@ export const HomePage: React.FC = () => {
     return (featured.length > 0 ? featured : doctors).slice(0, 3);
   }, [doctors]);
 
-  // Curated Gallery Preview from single source of truth
+  // Curated Gallery Preview from single source of truth (up to 6 highlighted items)
   const galleryPreview = React.useMemo(() => {
     const featured = gallery.filter((item) => item.featured);
-    return (featured.length > 0 ? featured : gallery).slice(0, 3);
+    return (featured.length > 0 ? featured : gallery).slice(0, 6);
   }, [gallery]);
 
   const [selectedGalleryItem, setSelectedGalleryItem] = React.useState<GalleryItem | null>(null);
@@ -585,7 +585,6 @@ export const HomePage: React.FC = () => {
                 <GalleryCard
                   item={item}
                   onClick={(clickedItem) => setSelectedGalleryItem(clickedItem)}
-                  isFeatured={index === 0}
                 />
               </motion.div>
             ))}
