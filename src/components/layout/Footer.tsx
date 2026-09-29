@@ -193,9 +193,12 @@ export const Footer: React.FC = () => {
           <p>
             © {new Date().getFullYear()} Deccan Care Maternity & General Hospital. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <span className="text-[11px] font-mono text-[#19A4CF]/60">
               Phase 1 Architectural Foundation
+            </span>
+            <span className="text-[8.5px] font-mono tracking-wider text-[#E2F4F9]/30 select-none">
+              MB
             </span>
           </div>
         </div>
