@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hospital-bg: #F7FCFE;
+  --color-hospital-surface: #FFFFFF;
+  --color-hospital-secondary-bg: #EEF8FB;
+  --color-hospital-soft-blue: #E2F4F9;
+  --color-hospital-blue: #0879A5;
+  --color-hospital-blue-hover: #06668C;
+  --color-hospital-accent: #19A4CF;
+  --color-hospital-navy: #103A50;
+  --color-hospital-navy-dark: #0B2737;
+  --color-hospital-text: #17384A;
+  --color-hospital-text-muted: #617786;
+  --color-hospital-border: #D6EAF1;
+  --color-hospital-border-subtle: #E8F4F8;
+  --color-hospital-red: #D93636;
+  --color-hospital-red-hover: #C22B2B;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, Cambria, 'Times New Roman', Times, serif;
+}
+
+:root {
+  --color-bg: #F7FCFE;
+  --color-secondary-bg: #EEF8FB;
+  --color-soft-blue: #E2F4F9;
+  --color-primary-blue: #0879A5;
+  --color-accent-blue: #19A4CF;
+  --color-navy: #103A50;
+  --color-text-primary: #17384A;
+  --color-text-secondary: #617786;
+  --color-border: #D6EAF1;
+  --color-red: #D93636;
+}
+
+/* Global Smooth & Clean Baseline */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reusable Geometric Visual System */
+.bg-medical-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(8, 121, 165, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(8, 121, 165, 0.04) 1px, transparent 1px);
+}
+
+.bg-medical-grid-fine {
+  background-size: 20px 20px;
+  background-image: 
+    linear-gradient(to right, rgba(8, 121, 165, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(8, 121, 165, 0.03) 1px, transparent 1px);
+}
+
+.bg-medical-grid-dark {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(226, 244, 249, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 244, 249, 0.04) 1px, transparent 1px);
+}
+
+.bg-medical-dots {
+  background-image: radial-gradient(rgba(8, 121, 165, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.bg-medical-dots-dark {
+  background-image: radial-gradient(rgba(226, 244, 249, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Custom Healthcare Focus Outline */
+:focus-visible {
+  outline: 2px solid var(--color-primary-blue);
+  outline-offset: 2px;
+}
+
+/* Reduced Motion Respect */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

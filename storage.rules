@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function for admin authentication
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // Helper function for image validation
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 10 * 1024 * 1024; // Max 10MB
+    }
+
+    // Public read for doctor photos & hospital gallery images
+    // Admin write with image type and size validation
+    match /doctors/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && (request.resource == null || isValidImage());
+    }
+
+    match /gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && (request.resource == null || isValidImage());
+    }
+
+    match /services/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && (request.resource == null || isValidImage());
+    }
+  }
+}

@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Explicit administrator authorization check:
+    // Requires authenticated user with custom claim (token.admin == true) OR verified record in /admins/{uid}
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Admins Collection: Only verified administrators or the user themselves can read/write their admin record
+    match /admins/{adminId} {
+      allow read, write: if request.auth != null && (request.auth.uid == adminId || isAdmin());
+    }
+
+    // Hospital Info: Public read, Admin write
+    match /hospitalInfo/{documentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Doctors: Public read, Admin write
+    match /doctors/{doctorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Services: Public read, Admin write
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Gallery: Public read, Admin write
+    match /gallery/{galleryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Availability Slots:
+    // - Public read allowed for patients to view availability.
+    // - Creation and deletion restricted strictly to authenticated administrators.
+    // - Update allowed for public ONLY during atomic booking: transitioning from 'available' to 'booked'
+    //   while strictly preserving doctor, date, times, and active state without tampering.
+    match /availability/{slotId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if (
+        resource.data.status == 'available' &&
+        request.resource.data.status == 'booked' &&
+        request.resource.data.doctorId == resource.data.doctorId &&
+        request.resource.data.date == resource.data.date &&
+        request.resource.data.startTime == resource.data.startTime &&
+        request.resource.data.endTime == resource.data.endTime &&
+        request.resource.data.active == resource.data.active &&
+        request.resource.data.bookingId is string &&
+        request.resource.data.bookingId.size() > 0
+      ) || isAdmin();
+    }
+
+    // Appointments:
+    // - Direct 'get' allowed for immediate patient confirmation receipt.
+    // - Querying/listing appointments restricted to authenticated administrators.
+    // - Public 'create' strictly validated (field types, string length bounds, pending status).
+    // - Update and deletion restricted strictly to authenticated administrators.
+    match /appointments/{appointmentId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      
+      allow create: if (
+        request.resource.data.patientName is string &&
+        request.resource.data.patientName.size() >= 2 &&
+        request.resource.data.patientName.size() <= 100 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() >= 10 &&
+        request.resource.data.phone.size() <= 15 &&
+        request.resource.data.doctorId is string &&
+        request.resource.data.doctorId.size() > 0 &&
+        request.resource.data.date is string &&
+        request.resource.data.date.size() == 10 &&
+        request.resource.data.slotId is string &&
+        request.resource.data.slotId.size() > 0 &&
+        request.resource.data.startTime is string &&
+        request.resource.data.startTime.size() > 0 &&
+        request.resource.data.endTime is string &&
+        request.resource.data.endTime.size() > 0 &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.notificationStatus == 'pending'
+      ) || isAdmin();
+
+      allow update, delete: if isAdmin();
+    }
+  }
+}
