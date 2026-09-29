@@ -32,10 +32,16 @@ async function testAvailabilityAndAdmin() {
   console.log('=== TESTING ADMIN AUTH & AVAILABILITY ===\n');
 
   // 1. Sign in
+  const email = process.env.ADMIN_EMAIL || 'deccancarehospital.24ths@gmail.com';
+  const password = process.env.ADMIN_PASSWORD || '';
+  if (!password) {
+    console.error('ERROR: ADMIN_PASSWORD environment variable not set.');
+    process.exit(1);
+  }
   const userCredential = await signInWithEmailAndPassword(
     auth,
-    'deccancarehospital.24ths@gmail.com',
-    'deccancare01'
+    email,
+    password
   );
   const uid = userCredential.user.uid;
   console.log('1. Signed in UID:', uid);

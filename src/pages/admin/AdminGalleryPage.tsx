@@ -186,14 +186,14 @@ export const AdminGalleryPage: React.FC = () => {
           editingItemId,
           {
             title: formData.title.trim(),
-            description: formData.description.trim() || undefined,
+            description: formData.description.trim(),
             category: formData.category.trim(),
             aspectRatio: formData.aspectRatio,
             featured: formData.featured,
             active: formData.active,
-            displayOrder: Number(formData.displayOrder),
-            imageUrl: formData.imageUrl,
-            imagePublicId: formData.imagePublicId,
+            displayOrder: Number(formData.displayOrder) || 1,
+            imageUrl: formData.imageUrl || '',
+            imagePublicId: formData.imagePublicId || '',
           },
           selectedImageFile || undefined
         );
@@ -202,12 +202,12 @@ export const AdminGalleryPage: React.FC = () => {
         await galleryService.addGalleryItem(
           {
             title: formData.title.trim(),
-            description: formData.description.trim() || undefined,
+            description: formData.description.trim(),
             category: formData.category.trim(),
             aspectRatio: formData.aspectRatio,
             featured: formData.featured,
             active: formData.active,
-            displayOrder: Number(formData.displayOrder),
+            displayOrder: Number(formData.displayOrder) || 1,
           },
           selectedImageFile
         );

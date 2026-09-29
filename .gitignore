@@ -14,16 +14,25 @@ dist-ssr
 
 # Environment & Secrets
 .env
+.env.*
+!.env.example
 .env.local
+.env.production
 .env.*.local
 *.env
 *-service-account*.json
+*.pem
+*.key
+*.cert
 firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
 functions/node_modules
 functions/lib
 functions/.env*
+scripts/*.mjs
+scripts/*.js
+*.pdf
 
 # Editor directories and files
 .vscode/*

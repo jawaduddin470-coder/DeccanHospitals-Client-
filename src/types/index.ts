@@ -3,3 +3,4 @@ export * from './doctor';
 export * from './service';
 export * from './gallery';
 export * from './appointment';
+export * from './admin';

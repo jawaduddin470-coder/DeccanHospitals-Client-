@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GlobalLayout } from '../components/layout/GlobalLayout';
 import { AdminProtectedRoute } from '../components/admin/AdminProtectedRoute';
+import { AdminSuperAdminRoute } from '../components/admin/AdminSuperAdminRoute';
 import { AdminLayout } from '../components/admin/AdminLayout';
 
 // Public Pages (Lazy Loaded)
@@ -23,6 +24,7 @@ const AdminDoctorsPage = lazy(() => import('../pages/admin/AdminDoctorsPage').th
 const AdminGalleryPage = lazy(() => import('../pages/admin/AdminGalleryPage').then((m) => ({ default: m.AdminGalleryPage })));
 const AdminServicesPage = lazy(() => import('../pages/admin/AdminServicesPage').then((m) => ({ default: m.AdminServicesPage })));
 const AdminHospitalPage = lazy(() => import('../pages/admin/AdminHospitalPage').then((m) => ({ default: m.AdminHospitalPage })));
+const AdminManagementPage = lazy(() => import('../pages/admin/AdminManagementPage').then((m) => ({ default: m.AdminManagementPage })));
 
 const PageLoader: React.FC = () => (
   <div className="min-h-[60vh] flex items-center justify-center">
@@ -178,6 +180,16 @@ export const AppRouter: React.FC = () => {
               <Suspense fallback={<PageLoader />}>
                 <AdminHospitalPage />
               </Suspense>
+            }
+          />
+          <Route
+            path="admins"
+            element={
+              <AdminSuperAdminRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <AdminManagementPage />
+                </Suspense>
+              </AdminSuperAdminRoute>
             }
           />
         </Route>

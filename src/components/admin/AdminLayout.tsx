@@ -13,7 +13,9 @@ import {
   Menu,
   X,
   Shield,
+  ShieldCheck,
   ExternalLink,
+  UserCog,
 } from 'lucide-react';
 
 interface NavItem {
@@ -21,9 +23,10 @@ interface NavItem {
   path: string;
   icon: React.ReactNode;
   exact?: boolean;
+  superAdminOnly?: boolean;
 }
 
-const ADMIN_NAV_ITEMS: NavItem[] = [
+const ALL_ADMIN_NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', path: '/admin', exact: true, icon: <LayoutDashboard className="w-4 h-4" /> },
   { name: 'Appointments', path: '/admin/appointments', icon: <Calendar className="w-4 h-4" /> },
   { name: 'Availability & Slots', path: '/admin/availability', icon: <Clock className="w-4 h-4" /> },
@@ -31,10 +34,11 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { name: 'Hospital Gallery', path: '/admin/gallery', icon: <ImageIcon className="w-4 h-4" /> },
   { name: 'Services & OPD', path: '/admin/services', icon: <Stethoscope className="w-4 h-4" /> },
   { name: 'Hospital Info', path: '/admin/hospital', icon: <Building2 className="w-4 h-4" /> },
+  { name: 'Admin Management', path: '/admin/admins', icon: <UserCog className="w-4 h-4" />, superAdminOnly: true },
 ];
 
 export const AdminLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, isSuperAdmin, adminProfile, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -44,7 +48,14 @@ export const AdminLayout: React.FC = () => {
     navigate('/login/admin');
   };
 
-  const currentSection = ADMIN_NAV_ITEMS.find((item) => {
+  const navItems = ALL_ADMIN_NAV_ITEMS.filter((item) => {
+    if (item.superAdminOnly) {
+      return isSuperAdmin;
+    }
+    return true;
+  });
+
+  const currentSection = ALL_ADMIN_NAV_ITEMS.find((item) => {
     if (item.exact) return location.pathname === item.path;
     return location.pathname.startsWith(item.path);
   })?.name || 'Console';
@@ -70,7 +81,7 @@ export const AdminLayout: React.FC = () => {
 
         {/* Navigation Items */}
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          {ADMIN_NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -93,11 +104,23 @@ export const AdminLayout: React.FC = () => {
         <div className="p-4 border-t border-white/10 space-y-3">
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-[#E2F4F9]">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono uppercase text-[#19A4CF]">Logged In Admin</span>
+              <span className="text-[10px] font-mono uppercase text-[#19A4CF] flex items-center gap-1">
+                {isSuperAdmin ? (
+                  <>
+                    <ShieldCheck className="w-3 h-3 text-[#19A4CF]" />
+                    <span>Super Admin</span>
+                  </>
+                ) : (
+                  <span>Hospital Admin</span>
+                )}
+              </span>
               <span className="w-2 h-2 rounded-full bg-[#19A4CF] animate-pulse" />
             </div>
-            <span className="font-mono text-xs text-white truncate block">
-              {user?.email || 'Admin Staff'}
+            <span className="font-semibold text-xs text-white block truncate">
+              {adminProfile?.name || 'Administrator'}
+            </span>
+            <span className="font-mono text-[10px] text-[#E2F4F9]/70 truncate block">
+              {user?.email || 'admin@deccancare.com'}
             </span>
           </div>
 
@@ -114,7 +137,7 @@ export const AdminLayout: React.FC = () => {
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#D93636]/20 hover:bg-[#D93636]/30 text-[#FF9E9E] text-xs font-mono transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#D93636]/20 hover:bg-[#D93636]/30 text-[#FF9E9E] text-xs font-mono transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign Out</span>
@@ -165,7 +188,7 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             <nav className="space-y-2">
-              {ADMIN_NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}

@@ -8,13 +8,9 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from './auth';
 import { db } from './firestore';
+import type { AdminProfile, AdminRole } from '../types/admin';
 
-export interface AdminUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  isAdmin: boolean;
-}
+export const ROOT_ADMIN_EMAIL = 'deccancarehospital.24ths@gmail.com';
 
 export const authService = {
   /**
@@ -29,7 +25,9 @@ export const authService = {
 
     if (import.meta.env.DEV) {
       console.info(
-        `[Admin Auth Diagnostics] Authenticated UID: ${user.uid} | Email: ${user.email} | Provider: ${user.providerData[0]?.providerId || 'password'}`
+        `[Admin Auth Diagnostics] Authenticated UID: ${user.uid} | Email: ${user.email} | Provider: ${
+          user.providerData[0]?.providerId || 'password'
+        }`
       );
     }
 
@@ -38,7 +36,7 @@ export const authService = {
     if (!isAuthorized) {
       await signOut(auth);
       throw new Error(
-        'Access denied: This account does not have administrator privileges for Deccan Care Hospital.'
+        'Access denied: This account does not have administrator privileges for Deccan Care Hospital or has been deactivated.'
       );
     }
 
@@ -46,17 +44,78 @@ export const authService = {
   },
 
   /**
+   * Fetch admin profile and role from Firestore
+   */
+  async getAdminProfile(user: User): Promise<AdminProfile | null> {
+    if (!user) return null;
+
+    const email = (user.email || '').toLowerCase().trim();
+    const isRoot = email === ROOT_ADMIN_EMAIL;
+
+    try {
+      const adminDocRef = doc(db, 'admins', user.uid);
+      const adminDocSnap = await getDoc(adminDocRef);
+
+      if (adminDocSnap.exists()) {
+        const data = adminDocSnap.data();
+        const role: AdminRole = isRoot
+          ? 'superadmin'
+          : data.role === 'superadmin' || data.role === 'hospital_admin'
+          ? 'superadmin'
+          : 'admin';
+
+        return {
+          uid: user.uid,
+          name: data.name || user.displayName || email.split('@')[0] || 'Administrator',
+          email: data.email || user.email || '',
+          role,
+          active: isRoot ? true : data.active !== false,
+          createdAt: data.createdAt || new Date().toISOString(),
+          updatedAt: data.updatedAt,
+          createdBy: data.createdBy,
+          lastLoginAt: data.lastLoginAt,
+        };
+      }
+
+      // Root administrator auto-bootstrap
+      if (isRoot) {
+        await this.bootstrapAdminRecord(user.uid, user.email || ROOT_ADMIN_EMAIL);
+        return {
+          uid: user.uid,
+          name: 'Deccan Care Superadmin',
+          email: ROOT_ADMIN_EMAIL,
+          role: 'superadmin',
+          active: true,
+          createdAt: new Date().toISOString(),
+        };
+      }
+
+      return null;
+    } catch (err) {
+      console.warn('Error fetching admin profile:', err);
+      if (isRoot) {
+        return {
+          uid: user.uid,
+          name: 'Deccan Care Superadmin',
+          email: ROOT_ADMIN_EMAIL,
+          role: 'superadmin',
+          active: true,
+          createdAt: new Date().toISOString(),
+        };
+      }
+      return null;
+    }
+  },
+
+  /**
    * Verify if authenticated user has administrator privileges
-   * Checks both Custom Claim (token.admin) and Firestore admin record (admins/{uid})
+   * Checks Custom Claim (token.admin) and Firestore admin record (admins/{uid})
    */
   async verifyAdminAuthorization(user: User): Promise<boolean> {
     if (!user) return false;
 
-    // 1. Hospital root administrator account check & auto-bootstrap
-    if (
-      user.email &&
-      user.email.toLowerCase().trim() === 'deccancarehospital.24ths@gmail.com'
-    ) {
+    // 1. Hospital root administrator check & auto-bootstrap
+    if (user.email && user.email.toLowerCase().trim() === ROOT_ADMIN_EMAIL) {
       try {
         await this.bootstrapAdminRecord(user.uid, user.email);
       } catch (bootstrapErr) {
@@ -68,11 +127,11 @@ export const authService = {
     try {
       // 2. Check custom claim from ID token
       const idTokenResult = await user.getIdTokenResult(true);
-      if (idTokenResult.claims.admin === true) {
+      if (idTokenResult.claims.admin === true || idTokenResult.claims.role === 'superadmin') {
         return true;
       }
 
-      // 3. Check if user document exists in admins collection
+      // 3. Check if user document exists in admins collection and is active
       const adminDocRef = doc(db, 'admins', user.uid);
       const adminDocSnap = await getDoc(adminDocRef);
       if (adminDocSnap.exists() && adminDocSnap.data()?.active !== false) {
@@ -97,7 +156,8 @@ export const authService = {
         {
           uid,
           email,
-          role: 'hospital_admin',
+          name: 'Deccan Care Superadmin',
+          role: 'superadmin',
           active: true,
           createdAt: new Date().toISOString(),
         },

@@ -98,6 +98,7 @@ export const galleryService = {
 
   /**
    * Add a new gallery item (Admin)
+   * Strictly normalizes optional fields to prevent Firestore undefined errors
    */
   async addGalleryItem(
     itemData: Omit<GalleryItem, 'id' | 'imageUrl' | 'createdAt' | 'updatedAt'>,
@@ -106,26 +107,36 @@ export const galleryService = {
     const docRef = doc(collection(db, FIRESTORE_COLLECTIONS.GALLERY));
     const upload = await this.uploadGalleryImage(imageFile);
 
-    const newItem: GalleryItem = {
-      ...itemData,
+    const nowIso = new Date().toISOString();
+
+    const cleanItem: GalleryItem = {
       id: docRef.id,
-      imageUrl: upload.secure_url,
-      imagePublicId: upload.public_id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      title: (itemData.title || '').trim(),
+      description: (itemData.description || '').trim(),
+      category: (itemData.category || 'Hospital Facilities').trim(),
+      aspectRatio: itemData.aspectRatio || '4:3',
+      featured: Boolean(itemData.featured),
+      active: itemData.active !== false,
+      displayOrder: typeof itemData.displayOrder === 'number' ? itemData.displayOrder : 1,
+      imageUrl: upload.secure_url || '',
+      imagePublicId: upload.public_id || '',
+      altText: (itemData.altText || itemData.title || 'Deccan Care Hospital photo').trim(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
     await setDoc(docRef, {
-      ...newItem,
+      ...cleanItem,
       serverCreatedAt: serverTimestamp(),
       serverUpdatedAt: serverTimestamp(),
     });
 
-    return newItem;
+    return cleanItem;
   },
 
   /**
    * Update gallery item (Admin)
+   * Preserves existing fields while normalizing missing optional inputs
    */
   async updateGalleryItem(
     id: string,
@@ -144,32 +155,58 @@ export const galleryService = {
       imagePublicId = upload.public_id;
     }
 
-    const updatePayload: Partial<GalleryItem> & { serverUpdatedAt?: unknown } = {
-      ...updates,
-      ...(imageUrl ? { imageUrl } : {}),
-      ...(imagePublicId ? { imagePublicId } : {}),
-      updatedAt: new Date().toISOString(),
-      serverUpdatedAt: serverTimestamp(),
-    };
+    const nowIso = new Date().toISOString();
 
     if (docSnap.exists()) {
-      await updateDoc(docRef, updatePayload);
+      const existingData = docSnap.data() as GalleryItem;
+      const cleanUpdates: Record<string, any> = {
+        updatedAt: nowIso,
+        serverUpdatedAt: serverTimestamp(),
+      };
+
+      if (updates.title !== undefined) cleanUpdates.title = updates.title.trim();
+      if (updates.description !== undefined) cleanUpdates.description = (updates.description || '').trim();
+      if (updates.category !== undefined) cleanUpdates.category = updates.category.trim();
+      if (updates.aspectRatio !== undefined) cleanUpdates.aspectRatio = updates.aspectRatio;
+      if (updates.featured !== undefined) cleanUpdates.featured = updates.featured;
+      if (updates.active !== undefined) cleanUpdates.active = updates.active;
+      if (updates.displayOrder !== undefined) cleanUpdates.displayOrder = Number(updates.displayOrder) || 1;
+      if (updates.altText !== undefined) cleanUpdates.altText = (updates.altText || '').trim();
+
+      // Image handling
+      if (imageUrl !== undefined && imageUrl !== '') {
+        cleanUpdates.imageUrl = imageUrl;
+      } else if (imageUrl === '') {
+        cleanUpdates.imageUrl = '';
+      } else if (existingData.imageUrl) {
+        cleanUpdates.imageUrl = existingData.imageUrl;
+      }
+
+      if (imagePublicId !== undefined && imagePublicId !== '') {
+        cleanUpdates.imagePublicId = imagePublicId;
+      } else if (imagePublicId === '') {
+        cleanUpdates.imagePublicId = '';
+      } else if (existingData.imagePublicId) {
+        cleanUpdates.imagePublicId = existingData.imagePublicId;
+      }
+
+      await updateDoc(docRef, cleanUpdates);
     } else {
       const fallback = INITIAL_GALLERY.find((g) => g.id === id);
       const completeItem: GalleryItem = {
         id,
-        title: updates.title || fallback?.title || 'Hospital Photo',
-        description: updates.description || fallback?.description || '',
-        category: updates.category || fallback?.category || 'Hospital Facilities',
+        title: updates.title ? updates.title.trim() : (fallback?.title || 'Hospital Photo'),
+        description: updates.description !== undefined ? (updates.description || '').trim() : (fallback?.description || ''),
+        category: updates.category ? updates.category.trim() : (fallback?.category || 'Hospital Facilities'),
         aspectRatio: updates.aspectRatio || fallback?.aspectRatio || '4:3',
         featured: updates.featured !== undefined ? updates.featured : (fallback?.featured || false),
         active: updates.active !== undefined ? updates.active : (fallback?.active !== false),
-        displayOrder: updates.displayOrder !== undefined ? updates.displayOrder : (fallback?.displayOrder || 1),
-        imageUrl: imageUrl || fallback?.imageUrl || '',
-        imagePublicId: imagePublicId || fallback?.imagePublicId,
-        altText: updates.altText || fallback?.altText || 'Deccan Care Hospital photo',
-        createdAt: fallback?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        displayOrder: updates.displayOrder !== undefined ? Number(updates.displayOrder) : (fallback?.displayOrder || 1),
+        imageUrl: (imageUrl !== undefined ? imageUrl : fallback?.imageUrl) || '',
+        imagePublicId: (imagePublicId !== undefined ? imagePublicId : fallback?.imagePublicId) || '',
+        altText: updates.altText !== undefined ? (updates.altText || '').trim() : (fallback?.altText || 'Deccan Care Hospital photo'),
+        createdAt: fallback?.createdAt || nowIso,
+        updatedAt: nowIso,
       };
 
       await setDoc(docRef, {

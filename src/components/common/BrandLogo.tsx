@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import redCrossImg from '../../assets/red-cross.png';
 
 export interface BrandLogoProps {
   variant?: 'header' | 'footer' | 'compact' | 'monochrome';
@@ -19,62 +20,29 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   const logoContent = (
     <div className={`flex items-center gap-3.5 group select-none ${className}`}>
-      {/* Precision Medical Vector Symbol */}
+      {/* Red Medical Cross Logo Symbol */}
       <div className="relative flex-shrink-0">
-        <svg
-          width={isCompact ? "38" : "44"}
-          height={isCompact ? "38" : "44"}
-          viewBox="0 0 44 44"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="transition-transform duration-300 group-hover:scale-105"
-          aria-hidden="true"
-        >
-          {/* Subtle Outer Enclosing Geometric Rounded Square */}
-          <rect
-            x="1"
-            y="1"
-            width="42"
-            height="42"
-            rx="11"
-            fill={isFooter ? "rgba(255, 255, 255, 0.08)" : "#EEF8FB"}
-            stroke={isFooter ? "rgba(226, 244, 249, 0.25)" : "#D6EAF1"}
-            strokeWidth="1.5"
-          />
-          {/* Primary Healthcare Blue Cross Base */}
-          <rect
-            x="18"
-            y="9"
-            width="8"
-            height="26"
-            rx="4"
-            fill={isFooter ? "#19A4CF" : "#0879A5"}
-          />
-          <rect
-            x="9"
-            y="18"
-            width="26"
-            height="8"
-            rx="4"
-            fill={isFooter ? "#19A4CF" : "#0879A5"}
-          />
-          {/* Medical Red Precision Vitality Dot */}
-          <circle
-            cx="32.5"
-            cy="11.5"
-            r="3.5"
-            fill="#D93636"
-          />
-          {/* White Inner Center Core */}
-          <rect
-            x="19.5"
-            y="19.5"
-            width="5"
-            height="5"
-            rx="1.5"
-            fill="#FFFFFF"
-          />
-        </svg>
+        {isFooter ? (
+          <div className="w-[44px] h-[44px] rounded-xl bg-white/10 border border-white/20 p-1.5 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
+            <img
+              src={redCrossImg}
+              alt="Deccan Care Hospital Logo"
+              className="w-full h-full object-contain rounded-lg bg-white"
+            />
+          </div>
+        ) : (
+          <div
+            className={`relative flex items-center justify-center rounded-xl bg-white border border-[#D6EAF1] shadow-xs overflow-hidden transition-transform duration-300 group-hover:scale-105 ${
+              isCompact ? 'w-[38px] h-[38px] p-1' : 'w-[44px] h-[44px] p-1.5'
+            }`}
+          >
+            <img
+              src={redCrossImg}
+              alt="Deccan Care Hospital Red Cross Logo"
+              className="w-full h-full object-contain rounded-lg"
+            />
+          </div>
+        )}
       </div>
 
       {/* Brand Typography */}
@@ -82,16 +50,16 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         <div className="flex items-center gap-1.5">
           <span
             className={`font-sans font-bold tracking-tight ${
-              isCompact ? "text-lg leading-tight" : "text-xl sm:text-2xl leading-none"
-            } ${isFooter ? "text-white" : "text-[#103A50]"}`}
+              isCompact ? 'text-lg leading-tight' : 'text-xl sm:text-2xl leading-none'
+            } ${isFooter ? 'text-white' : 'text-[#103A50]'}`}
           >
             DECCAN CARE
           </span>
         </div>
         <span
           className={`font-sans tracking-[0.14em] uppercase font-semibold mt-1 ${
-            isCompact ? "text-[8.5px]" : "text-[9.5px] sm:text-[10px]"
-          } ${isFooter ? "text-[#E2F4F9]/80" : "text-[#0879A5]"}`}
+            isCompact ? 'text-[8.5px]' : 'text-[9.5px] sm:text-[10px]'
+          } ${isFooter ? 'text-[#E2F4F9]/80' : 'text-[#0879A5]'}`}
         >
           Maternity & General Hospital
         </span>

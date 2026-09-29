@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db, FIRESTORE_COLLECTIONS } from '../firebase';
 import { INITIAL_SERVICES, INITIAL_FACILITIES } from '../config/initialServices';
-import type { HospitalService, HospitalFacility } from '../types';
+import type { HospitalService, HospitalFacility, ServiceCategoryKey } from '../types';
 
 export interface AdminHospitalService extends HospitalService {
   _source?: 'firestore' | 'fallback';
@@ -104,8 +104,15 @@ export const serviceService = {
   async addService(serviceData: Omit<HospitalService, 'id'>): Promise<HospitalService> {
     const docRef = doc(collection(db, FIRESTORE_COLLECTIONS.SERVICES));
     const newService: HospitalService = {
-      ...serviceData,
       id: docRef.id,
+      name: (serviceData.name || '').trim(),
+      description: (serviceData.description || '').trim(),
+      category: ((serviceData.category || 'general').trim()) as ServiceCategoryKey,
+      iconName: serviceData.iconName || 'Activity',
+      displayOrder: typeof serviceData.displayOrder === 'number' ? serviceData.displayOrder : 1,
+      active: serviceData.active !== false,
+      featured: Boolean(serviceData.featured),
+      isEmergency: Boolean(serviceData.isEmergency),
     };
 
     await setDoc(docRef, {
@@ -126,26 +133,33 @@ export const serviceService = {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      // Document exists in Firestore -> update it cleanly
-      await updateDoc(docRef, {
-        ...updates,
+      const cleanUpdates: Record<string, any> = {
         serverUpdatedAt: serverTimestamp(),
-      });
+      };
+      if (updates.name !== undefined) cleanUpdates.name = updates.name.trim();
+      if (updates.description !== undefined) cleanUpdates.description = (updates.description || '').trim();
+      if (updates.category !== undefined) cleanUpdates.category = updates.category.trim() as ServiceCategoryKey;
+      if (updates.iconName !== undefined) cleanUpdates.iconName = updates.iconName;
+      if (updates.displayOrder !== undefined) cleanUpdates.displayOrder = Number(updates.displayOrder) || 1;
+      if (updates.active !== undefined) cleanUpdates.active = updates.active;
+      if (updates.featured !== undefined) cleanUpdates.featured = updates.featured;
+      if (updates.isEmergency !== undefined) cleanUpdates.isEmergency = updates.isEmergency;
+
+      await updateDoc(docRef, cleanUpdates);
     } else {
       // Document does NOT exist in Firestore yet (it was a fallback record)
       // Merge with initial fallback data and create it via setDoc
       const fallback = INITIAL_SERVICES.find((s) => s.id === id);
       const completeRecord: HospitalService = {
         id,
-        name: updates.name || fallback?.name || id,
-        description: updates.description || fallback?.description || '',
-        category: updates.category || fallback?.category || 'general',
+        name: updates.name ? updates.name.trim() : (fallback?.name || id),
+        description: updates.description !== undefined ? (updates.description || '').trim() : (fallback?.description || ''),
+        category: (updates.category ? updates.category.trim() : (fallback?.category || 'general')) as ServiceCategoryKey,
         iconName: updates.iconName || fallback?.iconName || 'Activity',
-        displayOrder: updates.displayOrder !== undefined ? updates.displayOrder : (fallback?.displayOrder || 1),
+        displayOrder: updates.displayOrder !== undefined ? Number(updates.displayOrder) : (fallback?.displayOrder || 1),
         active: updates.active !== undefined ? updates.active : (fallback?.active !== false),
         featured: updates.featured !== undefined ? updates.featured : (fallback?.featured || false),
         isEmergency: updates.isEmergency !== undefined ? updates.isEmergency : (fallback?.isEmergency || false),
-        ...updates,
       };
 
       await setDoc(docRef, {

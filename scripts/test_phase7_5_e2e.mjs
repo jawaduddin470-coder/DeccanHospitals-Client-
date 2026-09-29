@@ -45,10 +45,16 @@ async function runPhase75E2E() {
 
   // 1. Authenticate Admin User
   console.log('1. Authenticating Admin User...');
+  const email = process.env.ADMIN_EMAIL || 'deccancarehospital.24ths@gmail.com';
+  const password = process.env.ADMIN_PASSWORD || '';
+  if (!password) {
+    console.error('ERROR: ADMIN_PASSWORD environment variable not set.');
+    process.exit(1);
+  }
   const userCredential = await signInWithEmailAndPassword(
     auth,
-    'deccancarehospital.24ths@gmail.com',
-    'deccancare01'
+    email,
+    password
   );
   console.log('   Authenticated UID:', userCredential.user.uid);
 
